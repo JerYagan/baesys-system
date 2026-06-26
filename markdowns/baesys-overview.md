@@ -80,21 +80,21 @@
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Vite + React |
+| **Frontend** | React 19 + Vite 8 |
 | **State Management** | Zustand |
-| **Styling** | Tailwind CSS |
+| **Styling** | Tailwind CSS v4 |
 | **Routing** | React Router v6 |
 | **HTTP Client** | Axios |
-| **Backend** | PHP (via XAMPP) |
-| **Database** | MySQL (managed via phpMyAdmin) |
-| **Server** | Apache (bundled with XAMPP) |
-| **Auth** | PHP Sessions + JWT stored in Zustand |
-| **PDF Generation** | mPDF or TCPDF (server-side document printing) |
+| **Backend** | Supabase (Serverless Engine) |
+| **Database** | PostgreSQL (Supabase) |
+| **Auth** | Supabase Auth (JWT managed via Zustand) |
+| **Storage** | Supabase Storage Buckets (avatars, document uploads) |
+| **PDF Generation** | jsPDF + html2canvas (client-side PDF generation) |
 | **Version Control** | Git + GitHub |
 
 > **Why Zustand?** Zustand provides a minimal, boilerplate-free global state solution for React. It manages the authenticated user session, sidebar/UI state, and cached data (e.g., resident lists) across pages without the overhead of Redux or Context prop-drilling.
 
-> **Why XAMPP?** Since this is a personal project for local barangay use, XAMPP provides a zero-cost, easy-to-set-up environment without needing a cloud server.
+> **Why Supabase?** By leveraging Supabase, the project eliminates complex backend maintenance (no PHP servers, no MySQL connections, and no custom session logic). Security, file storage, and database access are structured through zero-maintenance serverless queries.
 
 ---
 

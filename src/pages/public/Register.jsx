@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useNotifStore } from '../../store/useNotifStore'
 import { register as registerApi } from '../../api/auth'
 import { supabase } from '../../api/supabaseClient'
+import PasswordInput from '../../components/ui/PasswordInput'
 
 const Field = ({ id, label, type = 'text', value, onChange, error, placeholder, required, children }) => (
   <div>
@@ -109,16 +110,20 @@ export default function Register() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50 dark:bg-navy-950">
-      <div className="w-full max-w-2xl">
-        <div className="mb-8">
-          <div className="w-10 h-10 rounded-md bg-accent-700 dark:bg-accent-600 flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-sm">B</span>
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Create your account</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Register to access barangay services online.</p>
-        </div>
-
+      <div className="w-full max-w-6xl">
         <div className="card p-6">
+          <div className="mb-8 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-navy-900/80">
+            <div className="inline-flex items-center gap-3">
+              <img src="/images/logo-light.png" alt="Baesys logo" className="h-10 w-auto" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-600 dark:text-accent-300">Create a resident account</p>
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Register for Barangay services</h1>
+              </div>
+            </div>
+            <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+              Complete your profile and submit resident requests without visiting the barangay hall in person.
+            </p>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Picture */}
             <div className="flex flex-col items-center sm:flex-row gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
@@ -274,23 +279,35 @@ export default function Register() {
                 <Field
                   id="r-pw"
                   label="Password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => set('password', e.target.value)}
                   error={errors.password}
-                  placeholder="Min 6 chars"
                   required
-                />
+                >
+                  <PasswordInput
+                    id="r-pw"
+                    name="password"
+                    value={form.password}
+                    onChange={(e) => set('password', e.target.value)}
+                    placeholder="Min 6 chars"
+                    autoComplete="new-password"
+                    className={errors.password ? 'input-error' : ''}
+                  />
+                </Field>
                 <Field
                   id="r-cpw"
                   label="Confirm Password"
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={(e) => set('confirmPassword', e.target.value)}
                   error={errors.confirmPassword}
-                  placeholder="Re-enter"
                   required
-                />
+                >
+                  <PasswordInput
+                    id="r-cpw"
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={(e) => set('confirmPassword', e.target.value)}
+                    placeholder="Re-enter"
+                    autoComplete="new-password"
+                    className={errors.confirmPassword ? 'input-error' : ''}
+                  />
+                </Field>
               </div>
             </div>
 

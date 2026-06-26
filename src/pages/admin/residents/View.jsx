@@ -78,15 +78,27 @@ export default function ResidentProfile() {
       setHistoryLoading(true)
       try {
         if (activeTab === 'docs') {
-          const res = await api.get(`/requests/list.php?resident_id=${currentResident.id}&limit=100`)
-          if (res.data.success) {
-            setDocHistory(res.data.requests || [])
-          }
+          const { data, error: docError } = await supabase
+            .from('document_requests')
+            .select('*, document_types(*)')
+            .eq('resident_id', currentResident.id)
+            .order('requested_at', { ascending: false })
+          if (docError) throw docError
+
+          const formatted = (data || []).map((req) => ({
+            ...req,
+            document_name: req.document_types?.name || 'Document'
+          }))
+          setDocHistory(formatted)
         } else if (activeTab === 'blotters') {
-          const res = await api.get(`/blotter/list.php?resident_id=${currentResident.id}&limit=100`)
-          if (res.data.success) {
-            setBlotterHistory(res.data.blotters || [])
-          }
+          const fullName = `${currentResident.first_name} ${currentResident.last_name}`
+          const { data, error: blotterError } = await supabase
+            .from('blotter_records')
+            .select('*')
+            .eq('complainant_name', fullName)
+            .order('created_at', { ascending: false })
+          if (blotterError) throw blotterError
+          setBlotterHistory(data || [])
         }
       } catch (err) {
         console.error('Failed to load history', err)
@@ -529,15 +541,14 @@ export default function ResidentProfile() {
 
                       <div>
                         <label className="label" htmlFor="password">Login Password</label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           id="password"
                           name="password"
-                          placeholder="Leave blank to keep current password"
                           value={editForm.password}
                           onChange={handleEditChange}
-                          className="input"
+                          placeholder="Leave blank to keep current password"
                           autoComplete="new-password"
+                          className="w-full"
                         />
                       </div>
                     </div>

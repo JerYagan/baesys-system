@@ -21,12 +21,20 @@ function MetricIcon({ type }) {
 
 export default function AdminDashboard() {
   const { setPageTitle } = useUIStore()
-  const { dashboardStats, fetchDashboardStats, statsLoading } = useAdminStore()
+  const { 
+    dashboardStats, 
+    fetchDashboardStats, 
+    statsLoading,
+    activityLogs,
+    fetchActivityLogs,
+    activityLogsLoading
+  } = useAdminStore()
 
   useEffect(() => {
     setPageTitle('Dashboard')
     fetchDashboardStats()
-  }, [setPageTitle, fetchDashboardStats])
+    fetchActivityLogs({ limit: 5 })
+  }, [setPageTitle, fetchDashboardStats, fetchActivityLogs])
 
   const statCards = [
     { label: 'Total Residents', value: dashboardStats.totalResidents, icon: 'residents', tone: 'text-slate-700 bg-slate-100 dark:text-slate-300 dark:bg-slate-800' },
@@ -76,18 +84,60 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <section className="card overflow-hidden">
-          <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+          <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 flex justify-between items-center">
             <h3 className="text-sm font-semibold text-slate-950 dark:text-white">Recent Activity</h3>
+            <Link to="/admin/activity-log" className="text-xs text-accent-600 dark:text-accent-400 hover:underline">
+              View All
+            </Link>
           </div>
-          <div className="flex min-h-72 items-center justify-center px-5 py-12 text-slate-400 dark:text-slate-500">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
-                <MetricIcon type="clock" />
-              </div>
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No activity to show yet</p>
-              <p className="mt-1 text-xs text-slate-500">System activity will appear here when available.</p>
+          
+          {activityLogsLoading ? (
+            <div className="flex min-h-72 items-center justify-center">
+              <span className="text-xs text-slate-500">Loading activity...</span>
             </div>
-          </div>
+          ) : activityLogs.length === 0 ? (
+            <div className="flex min-h-72 items-center justify-center px-5 py-12 text-slate-400 dark:text-slate-500">
+              <div className="text-center">
+                <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
+                  <MetricIcon type="clock" />
+                </div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No activity to show yet</p>
+                <p className="mt-1 text-xs text-slate-500">System activity will appear here when available.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {activityLogs.slice(0, 5).map((log) => (
+                <div key={log.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors flex gap-3 items-start text-xs">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 font-mono text-[9px] text-slate-500 font-semibold shrink-0">
+                    {log.first_name ? `${log.first_name[0]}${log.last_name[0]}`.toUpperCase() : 'SYS'}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-850 dark:text-white">
+                        {log.first_name ? `${log.first_name} ${log.last_name}` : 'System'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {new Date(log.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}, {new Date(log.created_at).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-350">{log.details}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="inline-block bg-slate-100 dark:bg-slate-800/80 text-[9px] font-mono px-1.5 py-0.5 rounded text-slate-500">
+                        {log.action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="card overflow-hidden">

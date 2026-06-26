@@ -143,39 +143,65 @@ export default function ResidentDashboard() {
                 <p className="mt-1 text-xs">Your requested documents will appear here.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Document</th>
-                      <th>Requested Date</th>
-                      <th>Status</th>
-                      <th className="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myRequests.slice(0, 5).map((req) => (
-                      <tr key={req.id}>
-                        <td className="font-semibold text-slate-800 dark:text-slate-200">
-                          {req.document_name}
-                        </td>
-                        <td>{formatDate(req.requested_at)}</td>
-                        <td>
-                          <StatusBadge status={req.status} />
-                        </td>
-                        <td className="text-right">
-                          <Link
-                            to={`/resident/request/${req.id}`}
-                            className="btn btn-secondary btn-xs font-semibold"
-                          >
-                            Track
-                          </Link>
-                        </td>
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Document</th>
+                        <th>Requested Date</th>
+                        <th>Status</th>
+                        <th className="text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {myRequests.slice(0, 5).map((req) => (
+                        <tr key={req.id}>
+                          <td className="font-semibold text-slate-800 dark:text-slate-200">
+                            {req.document_name}
+                          </td>
+                          <td>{formatDate(req.requested_at)}</td>
+                          <td>
+                            <StatusBadge status={req.status} />
+                          </td>
+                          <td className="text-right">
+                            <Link
+                              to={`/resident/request/${req.id}`}
+                              className="btn btn-secondary btn-xs font-semibold"
+                            >
+                              Track
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-850">
+                  {myRequests.slice(0, 5).map((req) => (
+                    <div key={req.id} className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-semibold text-slate-900 dark:text-white">{req.document_name}</h4>
+                          <span className="text-[10px] text-slate-400 block mt-0.5">{formatDate(req.requested_at)}</span>
+                        </div>
+                        <StatusBadge status={req.status} />
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <Link
+                          to={`/resident/request/${req.id}`}
+                          className="text-accent-600 dark:text-accent-400 font-bold text-xs flex items-center gap-1"
+                        >
+                          Track Status &rarr;
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

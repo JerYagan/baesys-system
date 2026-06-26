@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useResidentStore } from '../../store/useResidentStore'
 import { useNotifStore } from '../../store/useNotifStore'
+import PasswordInput from '../../components/ui/PasswordInput'
 import Spinner from '../../components/ui/Spinner'
 import { supabase } from '../../api/supabaseClient'
 
@@ -215,34 +216,39 @@ export default function ResidentProfile() {
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
                 <label className="label">Current Password</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  id="current-password"
+                  name="currentPassword"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="input text-xs"
-                  required
+                  placeholder="Enter current password"
+                  className="text-xs"
                 />
               </div>
 
               <div>
                 <label className="label">New Password</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  id="new-password"
+                  name="newPassword"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="input text-xs"
-                  required
+                  placeholder="Enter new password"
+                  className="text-xs"
+                  autoComplete="new-password"
                 />
               </div>
 
               <div>
                 <label className="label">Confirm New Password</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  id="confirm-password"
+                  name="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input text-xs"
-                  required
+                  placeholder="Confirm new password"
+                  className="text-xs"
+                  autoComplete="new-password"
                 />
               </div>
 

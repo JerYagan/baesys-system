@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useNotifStore } from '../../store/useNotifStore'
 import { login as loginApi } from '../../api/auth'
+import PasswordInput from '../../components/ui/PasswordInput'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -47,12 +48,15 @@ export default function Login() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-slate-50 px-4 py-12 dark:bg-navy-950">
       <div className="w-full max-w-md">
-        <div className="mb-7">
-          <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-md bg-accent-700 dark:bg-accent-600">
-            <span className="text-sm font-bold text-white">B</span>
+        <div className="mb-7 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-navy-900/80">
+          <div className="inline-flex items-center gap-3">
+            <img src="/images/logo-light.png" alt="Baesys logo" className="h-10 w-auto" />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent-600 dark:text-accent-300">Baesys Portal</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Sign in to Baesys</h1>
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">Sign in to Baesys</h1>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Access resident services and barangay operations.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Access resident services, document requests, and barangay updates from your account.</p>
         </div>
 
         <div className="card p-6">
@@ -78,14 +82,14 @@ export default function Login() {
                   Forgot password?
                 </Link>
               </div>
-              <input
+              <PasswordInput
                 id="login-password"
-                type="password"
-                className={`input ${errors.password ? 'input-error' : ''}`}
-                placeholder="Enter your password"
+                name="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Enter your password"
                 autoComplete="current-password"
+                className={errors.password ? 'input-error' : ''}
               />
               {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
             </div>

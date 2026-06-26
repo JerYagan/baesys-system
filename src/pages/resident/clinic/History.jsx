@@ -80,51 +80,85 @@ export default function MyAppointments() {
             <p className="text-sm text-slate-500 mt-1">You haven't scheduled any clinic consultations yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Appointment ID</th>
-                  <th>Service Type</th>
-                  <th>Date & Time</th>
-                  <th>Purpose</th>
-                  <th>Status</th>
-                  <th>Staff Remarks</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myAppointments.map((appt) => (
-                  <tr key={appt.id}>
-                    <td>#{appt.id}</td>
-                    <td className="font-semibold text-slate-900 dark:text-white">{appt.service_name}</td>
-                    <td>
-                      <div>{formatDate(appt.schedule_date)}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                        {formatTime(appt.appointment_time)}
-                      </div>
-                    </td>
-                    <td className="max-w-xs truncate text-xs">{appt.purpose || '—'}</td>
-                    <td>
-                      <StatusBadge status={appt.status} />
-                    </td>
-                    <td className="max-w-xs truncate text-xs italic text-slate-500">{appt.staff_notes || '—'}</td>
-                    <td className="text-right">
-                      {['pending', 'approved'].includes(appt.status) && (
-                        <button
-                          disabled={cancellingId === appt.id}
-                          onClick={() => handleCancelAppointment(appt.id)}
-                          className="btn btn-secondary text-red-600 hover:text-red-700 dark:text-red-400 btn-xs"
-                        >
-                          {cancellingId === appt.id ? 'Cancelling...' : 'Cancel'}
-                        </button>
-                      )}
-                    </td>
+          <>
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Appointment ID</th>
+                    <th>Service Type</th>
+                    <th>Date & Time</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Staff Remarks</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {myAppointments.map((appt) => (
+                    <tr key={appt.id}>
+                      <td>#{appt.id}</td>
+                      <td className="font-semibold text-slate-900 dark:text-white">{appt.service_name}</td>
+                      <td>
+                        <div>{formatDate(appt.schedule_date)}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                          {formatTime(appt.appointment_time)}
+                        </div>
+                      </td>
+                      <td className="max-w-xs truncate text-xs">{appt.purpose || '—'}</td>
+                      <td>
+                        <StatusBadge status={appt.status} />
+                      </td>
+                      <td className="max-w-xs truncate text-xs italic text-slate-500">{appt.staff_notes || '—'}</td>
+                      <td className="text-right">
+                        {['pending', 'approved'].includes(appt.status) && (
+                          <button
+                            disabled={cancellingId === appt.id}
+                            onClick={() => handleCancelAppointment(appt.id)}
+                            className="btn btn-secondary text-red-600 hover:text-red-700 dark:text-red-400 btn-xs"
+                          >
+                            {cancellingId === appt.id ? 'Cancelling...' : 'Cancel'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {myAppointments.map((appt) => (
+                <div key={appt.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{appt.service_name}</h4>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Appt #{appt.id}</span>
+                    </div>
+                    <StatusBadge status={appt.status} />
+                  </div>
+                  <div className="text-xs text-slate-550 space-y-1">
+                    <p><span className="font-medium text-slate-650 dark:text-slate-400">Date & Time:</span> {formatDate(appt.schedule_date)} ({formatTime(appt.appointment_time)})</p>
+                    <p><span className="font-medium text-slate-650 dark:text-slate-400">Purpose:</span> {appt.purpose || '—'}</p>
+                    {appt.staff_notes && <p className="italic text-slate-500"><span className="font-medium text-slate-650 dark:text-slate-400">Remarks:</span> {appt.staff_notes}</p>}
+                  </div>
+                  {['pending', 'approved'].includes(appt.status) && (
+                    <div className="flex justify-end pt-1">
+                      <button
+                        disabled={cancellingId === appt.id}
+                        onClick={() => handleCancelAppointment(appt.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 font-bold text-xs"
+                      >
+                        {cancellingId === appt.id ? 'Cancelling...' : 'Cancel Appointment'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

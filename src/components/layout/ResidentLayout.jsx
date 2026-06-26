@@ -182,21 +182,28 @@ export default function ResidentLayout() {
           <nav className="hidden items-center gap-2 lg:flex">
             {navItems.map((item) => {
               if (item.items) {
+                const isChildActive = item.items.some((subItem) => location.pathname === subItem.path)
                 return (
                   <div key={item.label} className="relative group">
-                    <button className="flex items-center gap-1 rounded-md px-3 py-1.5 text-[13px] font-semibold text-slate-500 hover:bg-accent-50 hover:text-accent-800 dark:text-slate-400 dark:hover:bg-accent-950/30 dark:hover:text-white transition-colors">
+                    <button className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                      isChildActive
+                        ? 'bg-accent-50 text-accent-800 dark:bg-accent-950/30 dark:text-accent-400 font-bold'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
+                    }`}>
                       <span>{item.label}</span>
-                      <svg className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-180 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
-                    <div className="absolute left-0 mt-0.5 w-48 origin-top-left rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950 py-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-150 z-50">
+                    <div className="absolute left-0 mt-1 w-48 origin-top-left rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950 py-1.5 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
                       {item.items.map((subItem) => (
                         <Link
                           key={subItem.path}
                           to={subItem.path}
-                          className={`block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-accent-50 hover:text-accent-800 dark:text-slate-300 dark:hover:bg-accent-950/30 transition-colors ${
-                            location.pathname === subItem.path ? 'bg-accent-50 text-accent-800 dark:bg-accent-950/30 dark:text-white' : ''
+                          className={`block px-4 py-2 text-xs font-semibold hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-white transition-colors ${
+                            location.pathname === subItem.path 
+                              ? 'text-accent-700 dark:text-accent-400 bg-accent-50/55 dark:bg-accent-950/20' 
+                              : 'text-slate-600 dark:text-slate-350'
                           }`}
                         >
                           {subItem.label}
@@ -206,14 +213,15 @@ export default function ResidentLayout() {
                   </div>
                 )
               }
+              const isActive = location.pathname === item.path
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`rounded-md px-3 py-1.5 text-[13px] font-semibold transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-accent-700 text-white dark:bg-accent-600'
-                      : 'text-slate-500 hover:bg-accent-50 hover:text-accent-800 dark:text-slate-400 dark:hover:bg-accent-950/30 dark:hover:text-white'
+                    isActive
+                      ? 'bg-accent-50 text-accent-800 dark:bg-accent-950/30 dark:text-accent-400 font-bold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {item.label}

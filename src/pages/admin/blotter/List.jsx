@@ -150,7 +150,7 @@ export default function AdminBlotterList() {
                     <tr key={caseItem.id}>
                       <td className="font-bold text-slate-900 dark:text-white">#{caseItem.id}</td>
                       <td className="font-semibold text-slate-800 dark:text-slate-200">
-                        {caseItem.complainant_first_name} {caseItem.complainant_last_name}
+                        {caseItem.complainant_name}
                       </td>
                       <td className="text-slate-600 dark:text-slate-400">{caseItem.respondent_name}</td>
                       <td className="font-semibold">{caseItem.incident_type}</td>

@@ -67,26 +67,57 @@ export default function Landing() {
     <div className="animate-fade-in bg-white dark:bg-navy-950">
       <section className="relative min-h-[620px] overflow-hidden border-b border-accent-700/20 bg-accent-900 dark:border-slate-800">
         <img
-          src="/images/baesa.jpg"
+          src="/images/hero.webp"
           alt="Barangay Baesa community building"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-accent-900/80" />
-
         <div className="relative mx-auto flex min-h-[620px] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6">
-          <div className="max-w-3xl">
-            <p className="inline-flex rounded-md bg-white/10 px-3 py-1 text-sm font-semibold uppercase tracking-[0.18em] text-accent-100 ring-1 ring-white/15">For Baesa Residents</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Barangay services made easier to reach
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 sm:text-lg">
-              Baesys helps Barangay Baesa residents request documents, follow updates, and contact the barangay office through one simple online portal.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className="btn btn-navy btn-lg">Create Resident Account</Link>
-              <Link to="/login" className="btn btn-white-soft btn-lg">Sign In</Link>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Column: Text Content */}
+            <div className="lg:col-span-7 space-y-6">
+              <div>
+                <p className="inline-flex rounded-md bg-white/10 px-3 py-1 text-sm font-semibold uppercase tracking-[0.18em] text-accent-100 ring-1 ring-white/15">For Baesa Residents</p>
+                <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl leading-tight">
+                  Barangay services made easier to reach
+                </h1>
+                <p className="mt-5 text-base leading-7 text-slate-200 sm:text-lg">
+                  Baesys helps Barangay Baesa residents request documents, follow updates, and contact the barangay office through one simple online portal.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link to="/register" className="btn btn-navy btn-lg shadow-lg">Create Resident Account</Link>
+                <Link to="/login" className="btn btn-white-soft btn-lg shadow-sm">Sign In</Link>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 pt-4">
+                <div className="rounded-3xl border border-white/10 bg-white/10 p-4 text-white shadow-sm">
+                  <p className="text-sm font-semibold">Fast document requests</p>
+                  <p className="mt-2 text-sm text-white/80">Submit and track requests online in minutes.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/10 p-4 text-white shadow-sm">
+                  <p className="text-sm font-semibold">Secure resident account</p>
+                  <p className="mt-2 text-sm text-white/80">Manage your profile and history in one place.</p>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/10 p-4 text-white shadow-sm">
+                  <p className="text-sm font-semibold">Official announcements</p>
+                  <p className="mt-2 text-sm text-white/80">Stay updated with barangay advisories.</p>
+                </div>
+              </div>
             </div>
-            <p className="mt-4 text-sm text-accent-100/85">Use your account to submit requests and check status anytime.</p>
+
+            {/* Right Column: Image Showcase */}
+            <div className="hidden lg:col-span-5 lg:flex lg:flex-col lg:justify-center relative h-[420px]">
+              {/* Image 1 - Main card */}
+              <div className="absolute top-4 left-4 w-[75%] aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-white/15 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+                <img src="/images/img-1.webp" alt="Barangay community activity" className="w-full h-full object-cover" />
+              </div>
+              {/* Image 2 - Overlapping front card */}
+              <div className="absolute bottom-4 right-4 w-[65%] aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-white/15 transform rotate-6 hover:rotate-0 transition-transform duration-300">
+                <img src="/images/img-2.webp" alt="Barangay facilities" className="w-full h-full object-cover" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -212,11 +243,11 @@ export default function Landing() {
 
             <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
               {contactItems.map((item) => (
-                <div key={item.label} className="card p-5">
-                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-md bg-accent-50 text-accent-700 dark:bg-accent-950/50 dark:text-accent-300">
-                    <Icon d={item.icon} />
+                <div key={item.label} className="card p-5 transform hover:-translate-y-1 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300">
+                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-accent-50 text-accent-500 dark:bg-accent-950/50 dark:text-accent-400">
+                    <Icon d={item.icon} className="h-5 w-5" />
                   </div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{item.label}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-450">{item.label}</p>
                   <p className="mt-2 break-words text-sm font-semibold leading-6 text-slate-900 [overflow-wrap:anywhere] dark:text-white">{item.value}</p>
                 </div>
               ))}
@@ -224,15 +255,29 @@ export default function Landing() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">Office hours</h3>
+            <div className="flex items-center gap-2 text-slate-950 dark:text-white">
+              <svg className="w-5 h-5 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-lg font-semibold tracking-tight">Office hours</h3>
+            </div>
+
             <div className="mt-5 card overflow-hidden">
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {officeHours.map((item) => (
-                  <div key={item.day} className="px-5 py-4">
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.day}</p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.hours}</p>
-                  </div>
-                ))}
+                {officeHours.map((item) => {
+                  const isClosed = item.hours.toLowerCase() === 'closed'
+                  return (
+                    <div key={item.day} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.day}</p>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 w-fit ${isClosed
+                          ? 'bg-red-50 text-danger dark:bg-red-950/30 dark:text-red-400'
+                          : 'bg-accent-50 text-accent-600 dark:bg-accent-950/30 dark:text-accent-400'
+                        }`}>
+                        {item.hours}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

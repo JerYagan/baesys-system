@@ -5,6 +5,7 @@ import { useAdminStore } from '../../../store/useAdminStore'
 import { useUIStore } from '../../../store/useUIStore'
 import { useNotifStore } from '../../../store/useNotifStore'
 import Spinner from '../../../components/ui/Spinner'
+import PasswordInput from '../../../components/ui/PasswordInput'
 import { supabase } from '../../../api/supabaseClient'
 
 export default function AddResident() {
@@ -102,11 +103,11 @@ export default function AddResident() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto space-y-6">
       {/* Back button */}
       <div>
-        <Link 
-          to="/admin/residents" 
+        <Link
+          to="/admin/residents"
           className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
         >
           <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +119,7 @@ export default function AddResident() {
 
       <div className="card p-6 md:p-8">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Resident Registration Form</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Picture */}
           <div className="flex flex-col items-center sm:flex-row gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
@@ -133,11 +134,11 @@ export default function AddResident() {
             </div>
             <div className="space-y-1">
               <label className="label font-semibold">Profile Picture <span className="text-danger">*</span></label>
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleAvatarChange} 
-                className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-accent-50 file:text-accent-700 hover:file:bg-accent-100 dark:file:bg-slate-800 dark:file:text-accent-400" 
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-accent-50 file:text-accent-700 hover:file:bg-accent-100 dark:file:bg-slate-800 dark:file:text-accent-400"
               />
               <p className="text-[10px] text-slate-400">Supported formats: JPG, PNG, WEBP. Max size: 5MB.</p>
             </div>
@@ -146,7 +147,7 @@ export default function AddResident() {
           {/* Section 1: Personal Info */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Personal Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="label" htmlFor="first_name">First Name <span className="text-danger">*</span></label>
@@ -241,7 +242,7 @@ export default function AddResident() {
           {/* Section 2: Contact & Address */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Contact & Address</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label" htmlFor="contact_no">Contact Number</label>
@@ -297,7 +298,7 @@ export default function AddResident() {
           {/* Section 3: Household Linkage */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Household linkage</h3>
-            
+
             <div>
               <label className="label" htmlFor="household_id">Link to Household (Optional)</label>
               <select
@@ -323,7 +324,7 @@ export default function AddResident() {
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Credentials (Optional)</h3>
             <p className="text-xs text-slate-400 dark:text-slate-500">Provide an email and password to allow this resident to log in to the portal.</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label" htmlFor="email">Email Address</label>
@@ -340,15 +341,14 @@ export default function AddResident() {
 
               <div>
                 <label className="label" htmlFor="password">Login Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   id="password"
                   name="password"
-                  placeholder="Min 6 characters"
                   value={formData.password}
                   onChange={handleChange}
-                  className="input"
+                  placeholder="Min 6 characters"
                   autoComplete="new-password"
+                  className="w-full"
                 />
               </div>
             </div>

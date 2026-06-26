@@ -68,47 +68,77 @@ export default function BlotterHistory() {
             <p className="mt-2 text-xs">You have not filed any incident complaints yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Case ID</th>
-                  <th>Incident Type</th>
-                  <th>Respondent / Complainee</th>
-                  <th>Incident Date</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myBlotters.map((caseItem) => (
-                  <tr key={caseItem.id}>
-                    <td className="font-semibold text-slate-900 dark:text-white">
-                      #{caseItem.id}
-                    </td>
-                    <td className="font-semibold text-slate-800 dark:text-slate-200">
-                      {caseItem.incident_type}
-                    </td>
-                    <td className="text-slate-600 dark:text-slate-400">
-                      {caseItem.respondent_name}
-                    </td>
-                    <td>{formatDate(caseItem.incident_date)}</td>
-                    <td>
-                      <StatusBadge status={caseItem.status} />
-                    </td>
-                    <td className="text-right">
-                      <button
-                        onClick={() => setSelectedCase(caseItem)}
-                        className="btn btn-secondary btn-xs font-semibold"
-                      >
-                        View Details
-                      </button>
-                    </td>
+          <>
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Case ID</th>
+                    <th>Incident Type</th>
+                    <th>Respondent / Complainee</th>
+                    <th>Incident Date</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {myBlotters.map((caseItem) => (
+                    <tr key={caseItem.id}>
+                      <td className="font-semibold text-slate-900 dark:text-white">
+                        #{caseItem.id}
+                      </td>
+                      <td className="font-semibold text-slate-800 dark:text-slate-200">
+                        {caseItem.incident_type}
+                      </td>
+                      <td className="text-slate-600 dark:text-slate-400">
+                        {caseItem.respondent_name}
+                      </td>
+                      <td>{formatDate(caseItem.incident_date)}</td>
+                      <td>
+                        <StatusBadge status={caseItem.status} />
+                      </td>
+                      <td className="text-right">
+                        <button
+                          onClick={() => setSelectedCase(caseItem)}
+                          className="btn btn-secondary btn-xs font-semibold"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {myBlotters.map((caseItem) => (
+                <div key={caseItem.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">Case #{caseItem.id}</h4>
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-350 block mt-0.5">{caseItem.incident_type}</span>
+                    </div>
+                    <StatusBadge status={caseItem.status} />
+                  </div>
+                  <div className="text-xs text-slate-550 space-y-1">
+                    <p><span className="font-medium text-slate-650 dark:text-slate-400">Respondent:</span> {caseItem.respondent_name}</p>
+                    <p><span className="font-medium text-slate-650 dark:text-slate-400">Date:</span> {formatDate(caseItem.incident_date)}</p>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      onClick={() => setSelectedCase(caseItem)}
+                      className="text-accent-600 dark:text-accent-400 font-bold text-xs"
+                    >
+                      View Details &rarr;
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -139,7 +169,7 @@ export default function BlotterHistory() {
                 <div>
                   <span className="text-slate-400 block mb-1">Complainant (You)</span>
                   <span className="font-semibold text-slate-900 dark:text-white">
-                    {selectedCase.complainant_first_name} {selectedCase.complainant_last_name}
+                    {selectedCase.complainant_name}
                   </span>
                 </div>
                 <div>
@@ -166,7 +196,7 @@ export default function BlotterHistory() {
               <div className="pt-4 border-t border-slate-100 dark:border-slate-850">
                 <span className="text-slate-400 block mb-1">Description of Incident</span>
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap card p-3 bg-slate-50 dark:bg-navy-900/30">
-                  {selectedCase.description}
+                  {selectedCase.details}
                 </p>
               </div>
 

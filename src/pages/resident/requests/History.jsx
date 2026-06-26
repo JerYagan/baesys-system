@@ -54,47 +54,79 @@ export default function RequestHistory() {
             <p className="mt-2 text-xs">You have not submitted any document requests yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Document Type</th>
-                  <th>Purpose</th>
-                  <th>Date Requested</th>
-                  <th>Fee</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {myRequests.map((req) => (
-                  <tr key={req.id}>
-                    <td className="font-semibold text-slate-800 dark:text-slate-200">
-                      {req.document_name}
-                    </td>
-                    <td className="max-w-xs truncate text-slate-500 dark:text-slate-400">
-                      {req.purpose}
-                    </td>
-                    <td className="text-slate-555">{formatDate(req.requested_at)}</td>
-                    <td className="font-semibold">
-                      {parseFloat(req.document_fee) > 0 ? `₱${parseFloat(req.document_fee).toFixed(2)}` : 'FREE'}
-                    </td>
-                    <td>
-                      <StatusBadge status={req.status} />
-                    </td>
-                    <td className="text-right">
-                      <Link
-                        to={`/resident/request/${req.id}`}
-                        className="btn btn-secondary btn-xs font-semibold"
-                      >
-                        View Tracker
-                      </Link>
-                    </td>
+          <>
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Document Type</th>
+                    <th>Purpose</th>
+                    <th>Date Requested</th>
+                    <th>Fee</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {myRequests.map((req) => (
+                    <tr key={req.id}>
+                      <td className="font-semibold text-slate-800 dark:text-slate-200">
+                        {req.document_name}
+                      </td>
+                      <td className="max-w-xs truncate text-slate-500 dark:text-slate-400">
+                        {req.purpose}
+                      </td>
+                      <td className="text-slate-555">{formatDate(req.requested_at)}</td>
+                      <td className="font-semibold">
+                        {parseFloat(req.document_fee) > 0 ? `₱${parseFloat(req.document_fee).toFixed(2)}` : 'FREE'}
+                      </td>
+                      <td>
+                        <StatusBadge status={req.status} />
+                      </td>
+                      <td className="text-right">
+                        <Link
+                          to={`/resident/request/${req.id}`}
+                          className="btn btn-secondary btn-xs font-semibold"
+                        >
+                          View Tracker
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {myRequests.map((req) => (
+                <div key={req.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white">{req.document_name}</h4>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">{formatDate(req.requested_at)}</span>
+                    </div>
+                    <StatusBadge status={req.status} />
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Purpose:</span> {req.purpose}
+                  </p>
+                  <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-50 dark:border-slate-900/60">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Fee: <span className="font-semibold text-slate-950 dark:text-white">{parseFloat(req.document_fee) > 0 ? `₱${parseFloat(req.document_fee).toFixed(2)}` : 'FREE'}</span>
+                    </span>
+                    <Link
+                      to={`/resident/request/${req.id}`}
+                      className="text-accent-600 dark:text-accent-400 font-bold"
+                    >
+                      View Tracker &rarr;
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

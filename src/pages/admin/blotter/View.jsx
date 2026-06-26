@@ -119,7 +119,7 @@ export default function AdminBlotterView() {
             {currentBlotter.incident_type}
           </h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Complainant: {currentBlotter.complainant_first_name} {currentBlotter.complainant_last_name} vs. {currentBlotter.respondent_name}
+            Complainant: {currentBlotter.complainant_name} vs. {currentBlotter.respondent_name}
           </p>
         </div>
 
@@ -151,9 +151,9 @@ export default function AdminBlotterView() {
               <div>
                 <span className="text-slate-400 block mb-1">Complainant Resident</span>
                 <span className="font-semibold text-slate-900 dark:text-white">
-                  {currentBlotter.complainant_first_name} {currentBlotter.complainant_last_name}
+                  {currentBlotter.complainant_name}
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">Contact: {currentBlotter.complainant_contact_no || '—'}</span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">Contact: {currentBlotter.complainant_contact || '—'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-1">Respondent / Complainee</span>
@@ -178,7 +178,7 @@ export default function AdminBlotterView() {
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <span className="text-slate-400 block mb-1">Description details</span>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap card p-3 bg-slate-50 dark:bg-navy-900/20">
-                {currentBlotter.description}
+                {currentBlotter.details}
               </p>
             </div>
 

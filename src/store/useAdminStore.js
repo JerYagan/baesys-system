@@ -77,20 +77,54 @@ export const useAdminStore = create((set, get) => ({
   fetchDashboardStats: async () => {
     set({ statsLoading: true })
     try {
-      const res = await api.get('/dashboard/stats.php')
-      if (res.data.success) {
-        set({
-          dashboardStats: {
-            totalResidents: res.data.totalResidents,
-            totalHouseholds: res.data.totalHouseholds,
-            pendingRequests: res.data.pendingRequests,
-            openBlotters: res.data.openBlotters,
-            completedThisMonth: res.data.completedThisMonth,
-          }
-        })
-      }
+      // 1. Total Residents
+      const { count: totalResidents, error: errRes } = await supabase
+        .from('residents')
+        .select('*', { count: 'exact', head: true })
+      if (errRes) throw errRes
+
+      // 2. Total Households
+      const { count: totalHouseholds, error: errHh } = await supabase
+        .from('households')
+        .select('*', { count: 'exact', head: true })
+      if (errHh) throw errHh
+
+      // 3. Pending Requests
+      const { count: pendingRequests, error: errReq } = await supabase
+        .from('document_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+      if (errReq) throw errReq
+
+      // 4. Open Blotters (filed or under_mediation)
+      const { count: openBlotters, error: errBlotter } = await supabase
+        .from('blotter_records')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['filed', 'under_mediation'])
+      if (errBlotter) throw errBlotter
+
+      // 5. Completed This Month
+      const startOfMonth = new Date()
+      startOfMonth.setDate(1)
+      startOfMonth.setHours(0, 0, 0, 0)
+      const { count: completedThisMonth, error: errComp } = await supabase
+        .from('document_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('updated_at', startOfMonth.toISOString())
+      if (errComp) throw errComp
+
+      set({
+        dashboardStats: {
+          totalResidents: totalResidents || 0,
+          totalHouseholds: totalHouseholds || 0,
+          pendingRequests: pendingRequests || 0,
+          openBlotters: openBlotters || 0,
+          completedThisMonth: completedThisMonth || 0,
+        }
+      })
     } catch (error) {
-      console.error('Failed to fetch dashboard stats', error)
+      console.error('Failed to fetch dashboard stats from Supabase', error)
     } finally {
       set({ statsLoading: false })
     }
