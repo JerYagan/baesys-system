@@ -53,7 +53,7 @@ export default function Landing() {
           .order('created_at', { ascending: false })
           .limit(3)
         if (error) throw error
-        setAnnouncements(data || [])
+        setAnnouncements((data || []).map((ann) => ({ ...ann, body: ann.content })))
       } catch (err) {
         console.error(err)
       } finally {

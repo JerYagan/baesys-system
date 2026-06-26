@@ -4,16 +4,15 @@ import { useParams, Link } from 'react-router-dom'
 import { useAdminStore } from '../../../store/useAdminStore'
 import { useUIStore } from '../../../store/useUIStore'
 import { useNotifStore } from '../../../store/useNotifStore'
-import { useAuthStore } from '../../../store/useAuthStore'
 import RequestStatusTracker from '../../../components/ui/RequestStatusTracker'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Spinner from '../../../components/ui/Spinner'
+import { exportDocumentRequestPdf } from '../../../utils/documentRequestPdfExport'
 
 export default function DocumentRequestDetail() {
   const { id } = useParams()
   const { setPageTitle } = useUIStore()
   const { success, error: showNotifError } = useNotifStore()
-  const { token } = useAuthStore()
 
   const {
     currentRequest,
@@ -26,6 +25,7 @@ export default function DocumentRequestDetail() {
   const [status, setStatus] = useState('pending')
   const [notes, setNotes] = useState('')
   const [updating, setUpdating] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   useEffect(() => {
     setPageTitle('Request Details')
@@ -56,6 +56,19 @@ export default function DocumentRequestDetail() {
       showNotifError(err.message || 'An error occurred while updating the status.')
     } finally {
       setUpdating(false)
+    }
+  }
+
+  const handleGeneratePdf = async () => {
+    if (!currentRequest) return
+    setPdfLoading(true)
+    try {
+      await exportDocumentRequestPdf(currentRequest)
+    } catch (err) {
+      console.error('Failed to generate document PDF', err)
+      showNotifError('Failed to generate PDF. Please try again.')
+    } finally {
+      setPdfLoading(false)
     }
   }
 
@@ -101,9 +114,6 @@ export default function DocumentRequestDetail() {
       </div>
     )
   }
-
-  // Absolute path to dynamic mpdf generator (using the Vite proxy /api)
-  const pdfUrl = `/api/requests/generate-pdf.php?id=${currentRequest.id}&token=${token}`
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -258,17 +268,17 @@ export default function DocumentRequestDetail() {
             <p className="text-xs text-slate-400 dark:text-slate-500">
               Compile the document template using resident records and stream the official PDF to print.
             </p>
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full btn btn-secondary text-accent-600 dark:text-accent-400 border-accent-200 dark:border-accent-950/40 hover:bg-accent-50 dark:hover:bg-accent-950/15 flex items-center justify-center font-bold"
+            <button
+              type="button"
+              onClick={handleGeneratePdf}
+              disabled={pdfLoading}
+              className="w-full btn btn-secondary text-accent-600 dark:text-accent-400 border-accent-200 dark:border-accent-950/40 hover:bg-accent-50 dark:hover:bg-accent-950/15 flex items-center justify-center font-bold disabled:opacity-60"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
-              Generate & View PDF
-            </a>
+              {pdfLoading ? 'Generating PDF...' : 'Generate & View PDF'}
+            </button>
           </div>
         </div>
       </div>

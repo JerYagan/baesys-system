@@ -4,13 +4,17 @@ import { useResidentStore } from '../../../store/useResidentStore'
 import RequestStatusTracker from '../../../components/ui/RequestStatusTracker'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Spinner from '../../../components/ui/Spinner'
+import { useNotifStore } from '../../../store/useNotifStore'
+import { exportDocumentRequestPdf } from '../../../utils/documentRequestPdfExport'
 
 export default function ResidentRequestDetail() {
   const { id } = useParams()
   const { fetchRequestById } = useResidentStore()
+  const { error: showError } = useNotifStore()
   const [request, setRequest] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const fetchRequestDetails = async () => {
     setLoading(true)
@@ -65,8 +69,18 @@ export default function ResidentRequestDetail() {
   }
 
   const showPDF = request.status === 'ready_for_pickup' || request.status === 'released'
-  const tokenVal = JSON.parse(localStorage.getItem('baesys-auth'))?.state?.token
-  const pdfLink = `/api/requests/generate-pdf.php?id=${request.id}&token=${tokenVal}`
+
+  const handleGeneratePdf = async () => {
+    setPdfLoading(true)
+    try {
+      await exportDocumentRequestPdf(request)
+    } catch (err) {
+      console.error('Failed to generate document PDF', err)
+      showError('Failed to generate PDF. Please try again.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-6">
@@ -169,17 +183,17 @@ export default function ResidentRequestDetail() {
 
             {showPDF ? (
               <div className="pt-2">
-                <a
-                  href={pdfLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full btn btn-primary btn-sm flex items-center justify-center"
+                <button
+                  type="button"
+                  onClick={handleGeneratePdf}
+                  disabled={pdfLoading}
+                  className="w-full btn btn-primary btn-sm flex items-center justify-center disabled:opacity-60"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 9.5V19a2 2 0 01-2 2z" />
                   </svg>
-                  Generate & View PDF
-                </a>
+                  {pdfLoading ? 'Generating PDF...' : 'Generate & View PDF'}
+                </button>
               </div>
             ) : (
               <div className="pt-2">

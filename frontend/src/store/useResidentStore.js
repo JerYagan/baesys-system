@@ -1,9 +1,37 @@
 // src/store/useResidentStore.js
 // Manages resident-facing data: requests, blotters, profile, clinic appointments, digital ID
 import { create } from 'zustand'
+import QRCode from 'qrcode'
 import api from '../api/axios'
 import { supabase } from '../api/supabaseClient'
 import { useAuthStore } from './useAuthStore'
+import { logActivity } from '../utils/activityLogger'
+import { mapAppointment, mapClinicSchedule } from '../utils/clinicMappers'
+
+const fromDbRequestStatus = (status) => (status === 'completed' ? 'released' : status)
+
+const mapDocumentRequest = (req) => {
+  if (!req) return null
+  const resident = req.residents || {}
+  return {
+    ...req,
+    status: fromDbRequestStatus(req.status),
+    notes: req.remarks || '',
+    document_name: req.document_types?.name || 'Document',
+    document_fee: req.document_types?.fee || 0,
+    processing_days: req.document_types?.processing_days || 1,
+    resident_first_name: resident.first_name || '',
+    resident_last_name: resident.last_name || '',
+    resident_middle_name: resident.middle_name || '',
+    resident_contact_no: resident.contact_no || '',
+    resident_birthdate: resident.birthdate || '',
+    resident_sex: resident.sex || '',
+    resident_purok: resident.purok || '',
+    resident_address: resident.address || '',
+    resident_civil_status: resident.civil_status || '',
+    requested_at: req.requested_at,
+  }
+}
 
 export const useResidentStore = create((set, get) => ({
   // My document requests
@@ -32,12 +60,7 @@ export const useResidentStore = create((set, get) => ({
 
       if (error) throw error
       
-      const mapped = (data || []).map(req => ({
-        ...req,
-        document_name: req.document_types?.name || 'Document',
-        document_fee: req.document_types?.fee || 0,
-        requested_at: req.created_at
-      }))
+      const mapped = (data || []).map(mapDocumentRequest)
 
       set({ myRequests: mapped })
     } catch (error) {
@@ -73,6 +96,7 @@ export const useResidentStore = create((set, get) => ({
         .single()
 
       if (error) throw error
+      await logActivity('create_request', `Submitted document request #${newReq.id}`)
       return { success: true, request: newReq }
     } catch (error) {
       throw error || new Error('Failed to submit document request')
@@ -89,14 +113,7 @@ export const useResidentStore = create((set, get) => ({
 
       if (error) throw error
 
-      const mapped = data ? {
-        ...data,
-        document_name: data.document_types?.name || 'Document',
-        document_fee: data.document_types?.fee || 0,
-        resident_first_name: data.residents?.first_name || '',
-        resident_last_name: data.residents?.last_name || '',
-        requested_at: data.created_at
-      } : null;
+      const mapped = mapDocumentRequest(data)
 
       return { success: true, request: mapped }
     } catch (error) {
@@ -253,7 +270,7 @@ export const useResidentStore = create((set, get) => ({
       const { data, error } = await query
       if (error) throw error
 
-      set({ clinicSchedules: data || [] })
+      set({ clinicSchedules: (data || []).map(mapClinicSchedule) })
     } catch (error) {
       console.error('Failed to fetch clinic schedules', error)
     } finally {
@@ -286,7 +303,7 @@ export const useResidentStore = create((set, get) => ({
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      set({ myAppointments: data || [] })
+      set({ myAppointments: (data || []).map(mapAppointment) })
     } catch (error) {
       console.error('Failed to fetch appointments', error)
     } finally {
@@ -341,6 +358,7 @@ export const useResidentStore = create((set, get) => ({
         .update({ filled_slots: schedule.filled_slots + 1 })
         .eq('id', scheduleId)
 
+      await logActivity('book_appointment', `Booked clinic appointment #${appointment.id}`)
       return { success: true, appointment }
     } catch (error) {
       throw error || new Error('Failed to book appointment')
@@ -359,16 +377,23 @@ export const useResidentStore = create((set, get) => ({
 
       const { data, error } = await supabase
         .from('residents')
-        .select('barangay_id_no, digital_id_issued_at, digital_id_expires_at, digital_id_secure_hash, digital_id_status')
+        .select('first_name, last_name, middle_name, purok, profile_path, contact_no, barangay_id_no, digital_id_issued_at, digital_id_expires_at, digital_id_secure_hash, digital_id_status')
         .eq('user_id', user.id)
         .maybeSingle()
 
       if (error) throw error
 
-      if (data && data.digital_id_status !== 'not_requested') {
-        set({ digitalId: data, digitalIdStatus: data.digital_id_status })
+      const status = data?.digital_id_status || 'not_requested'
+
+      if (data && status === 'issued' && data.barangay_id_no) {
+        const qrData = data.digital_id_secure_hash || data.barangay_id_no
+        const qr_code_url = await QRCode.toDataURL(qrData, { width: 200, margin: 1 })
+        set({
+          digitalId: { ...data, qr_code_url },
+          digitalIdStatus: status,
+        })
       } else {
-        set({ digitalId: null, digitalIdStatus: data?.digital_id_status || 'not_requested' })
+        set({ digitalId: null, digitalIdStatus: status })
       }
     } catch (error) {
       console.error('Failed to fetch Digital ID details', error)
@@ -389,6 +414,7 @@ export const useResidentStore = create((set, get) => ({
         .eq('user_id', user.id)
 
       if (error) throw error
+      await logActivity('request_digital_id', 'Requested Digital Barangay ID')
       set({ digitalIdStatus: 'requested' })
       return { success: true, message: 'Digital ID request submitted successfully!' }
     } catch (error) {

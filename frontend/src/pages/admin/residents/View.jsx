@@ -22,6 +22,7 @@ export default function ResidentProfile() {
     fetchResidentById,
     updateResident,
     archiveResident,
+    generateDigitalId,
     households,
     fetchHouseholds
   } = useAdminStore()
@@ -213,13 +214,11 @@ export default function ResidentProfile() {
   const handleIssueDigitalId = async () => {
     setIdIssueLoading(true)
     try {
-      const res = await api.post('/digital-id/generate.php', { resident_id: currentResident.id })
-      if (res.data.success) {
-        success('Digital ID generated successfully!')
-        fetchResidentById(currentResident.id)
-      }
+      await generateDigitalId(currentResident.id)
+      success('Digital ID generated successfully!')
+      fetchResidentById(currentResident.id)
     } catch (err) {
-      showNotifError(err.response?.data?.message || 'Failed to generate Digital ID')
+      showNotifError(err.message || 'Failed to generate Digital ID')
     } finally {
       setIdIssueLoading(false)
       setIdConfirmOpen(false)

@@ -32,7 +32,7 @@ export default function AnnouncementDetail() {
 
         if (fetchErr) throw fetchErr
         if (data) {
-          setAnnouncement(data)
+          setAnnouncement({ ...data, body: data.content })
         } else {
           setError('Announcement not found.')
         }

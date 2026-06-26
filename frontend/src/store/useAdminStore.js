@@ -3,6 +3,66 @@
 import { create } from 'zustand'
 import api from '../api/axios'
 import { supabase } from '../api/supabaseClient'
+import { useAuthStore } from './useAuthStore'
+import { logActivity } from '../utils/activityLogger'
+import { mapAppointment, mapClinicSchedule } from '../utils/clinicMappers'
+
+const toDbRequestStatus = (status) => (status === 'released' ? 'completed' : status)
+const fromDbRequestStatus = (status) => (status === 'completed' ? 'released' : status)
+
+const mapDocumentRequest = (req) => {
+  if (!req) return null
+  const resident = req.residents || {}
+  return {
+    ...req,
+    status: fromDbRequestStatus(req.status),
+    notes: req.remarks || '',
+    document_name: req.document_types?.name || 'Document',
+    document_fee: req.document_types?.fee || 0,
+    processing_days: req.document_types?.processing_days || 1,
+    resident_first_name: resident.first_name || '',
+    resident_last_name: resident.last_name || '',
+    resident_middle_name: resident.middle_name || '',
+    resident_contact_no: resident.contact_no || '',
+    resident_birthdate: resident.birthdate || '',
+    resident_sex: resident.sex || '',
+    resident_purok: resident.purok || '',
+    resident_address: resident.address || '',
+    resident_civil_status: resident.civil_status || '',
+    requested_at: req.requested_at,
+  }
+}
+
+const mapOfficialRecord = (official) => {
+  if (!official) return null
+  return {
+    ...official,
+    resident_id: official.resident_id || official.residents?.id,
+    first_name: official.residents?.first_name || official.first_name || '',
+    last_name: official.residents?.last_name || official.last_name || '',
+    contact_no: official.residents?.contact_no || official.contact_no || '',
+    photo_path: official.residents?.profile_path || official.photo_path || '',
+  }
+}
+
+async function uploadOfficialPhoto(photoFile) {
+  if (!photoFile || !(photoFile instanceof File) || photoFile.size === 0) {
+    return null
+  }
+
+  const fileExt = photoFile.name.split('.').pop()
+  const fileName = `official-${Math.floor(Date.now() / 1000)}-${Math.floor(Math.random() * 1000)}.${fileExt}`
+  const filePath = `profiles/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, photoFile, { upsert: true })
+
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
+  return publicUrl
+}
 
 export const useAdminStore = create((set, get) => ({
   // Dashboard stats
@@ -162,6 +222,7 @@ export const useAdminStore = create((set, get) => ({
 
       if (residentError) throw residentError
 
+      await logActivity('create_resident', `Created resident #${newResident.id}`)
       return { success: true, resident: newResident }
     } catch (error) {
       throw error || new Error('Failed to create resident')
@@ -210,6 +271,7 @@ export const useAdminStore = create((set, get) => ({
 
       if (residentError) throw residentError
 
+      await logActivity(isArchived ? 'archive_resident' : 'restore_resident', `${isArchived ? 'Archived' : 'Restored'} resident #${id}`)
       return { success: true, resident: updatedResident }
     } catch (error) {
       throw error || new Error('Failed to change archive status')
@@ -419,7 +481,7 @@ export const useAdminStore = create((set, get) => ({
         .select('*, residents(*), document_types(*)', { count: 'exact' })
 
       if (params.status && params.status !== 'all') {
-        query = query.eq('status', params.status)
+        query = query.eq('status', toDbRequestStatus(params.status))
       }
       if (params.type) {
         query = query.eq('document_type_id', params.type)
@@ -436,14 +498,7 @@ export const useAdminStore = create((set, get) => ({
 
       if (error) throw error
 
-      const mapped = (data || []).map(req => ({
-        ...req,
-        document_name: req.document_types?.name || 'Document',
-        document_fee: req.document_types?.fee || 0,
-        resident_first_name: req.residents?.first_name || '',
-        resident_last_name: req.residents?.last_name || '',
-        requested_at: req.created_at
-      }))
+      const mapped = (data || []).map(mapDocumentRequest)
 
       // Calculate stats
       const { data: allReqs, error: statsError } = await supabase
@@ -457,7 +512,7 @@ export const useAdminStore = create((set, get) => ({
           if (r.status === 'pending') stats.pending++
           else if (r.status === 'processing') stats.processing++
           else if (r.status === 'ready_for_pickup') stats.ready++
-          else if (r.status === 'released') stats.released++
+          else if (r.status === 'completed') stats.released++
         })
       }
 
@@ -489,16 +544,7 @@ export const useAdminStore = create((set, get) => ({
 
       if (error) throw error
 
-      const mapped = data ? {
-        ...data,
-        document_name: data.document_types?.name || 'Document',
-        document_fee: data.document_types?.fee || 0,
-        resident_first_name: data.residents?.first_name || '',
-        resident_last_name: data.residents?.last_name || '',
-        requested_at: data.created_at
-      } : null;
-
-      set({ currentRequest: mapped })
+      set({ currentRequest: mapDocumentRequest(data) })
     } catch (error) {
       console.error('Failed to fetch request detail', error)
     } finally {
@@ -511,13 +557,17 @@ export const useAdminStore = create((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('document_requests')
-        .update({ status, notes })
+        .update({
+          status: toDbRequestStatus(status),
+          remarks: notes || null,
+        })
         .eq('id', requestId)
         .select()
         .single()
 
       if (error) throw error
-      return { success: true, request: data }
+      await logActivity('update_request_status', `Updated request #${requestId} to ${status}`)
+      return { success: true, request: mapDocumentRequest(data) }
     } catch (error) {
       throw error || new Error('Failed to update request status')
     }
@@ -673,7 +723,7 @@ export const useAdminStore = create((set, get) => ({
       const { data, error } = await query
       if (error) throw error
 
-      set({ officials: data || [] })
+      set({ officials: (data || []).map(mapOfficialRecord) })
     } catch (error) {
       console.error('Failed to fetch officials', error)
     } finally {
@@ -690,7 +740,7 @@ export const useAdminStore = create((set, get) => ({
         .maybeSingle()
 
       if (error) throw error
-      set({ currentOfficial: data })
+      set({ currentOfficial: mapOfficialRecord(data) })
     } catch (error) {
       console.error('Failed to fetch official details', error)
     } finally {
@@ -699,73 +749,127 @@ export const useAdminStore = create((set, get) => ({
   },
   createOfficial: async (formData) => {
     try {
-      let residentId, position, termStart, termEnd, isActive;
+      let firstName, lastName, position, termStart, termEnd, contactNo, photoFile
+
       if (formData instanceof FormData) {
-        residentId = formData.get('resident_id');
-        position = formData.get('position');
-        termStart = formData.get('term_start');
-        termEnd = formData.get('term_end');
-        isActive = formData.get('is_active') === 'on' || formData.get('is_active') === '1' ? 1 : 0;
+        firstName = formData.get('first_name')
+        lastName = formData.get('last_name')
+        position = formData.get('position')
+        termStart = formData.get('term_start')
+        termEnd = formData.get('term_end')
+        contactNo = formData.get('contact_no')
+        photoFile = formData.get('photo')
       } else {
-        residentId = formData.resident_id;
-        position = formData.position;
-        termStart = formData.term_start;
-        termEnd = formData.term_end;
-        isActive = formData.is_active;
+        firstName = formData.first_name
+        lastName = formData.last_name
+        position = formData.position
+        termStart = formData.term_start
+        termEnd = formData.term_end
+        contactNo = formData.contact_no
+        photoFile = formData.photo
       }
 
-      const { data, error } = await supabase
-        .from('officials')
+      const profilePath = await uploadOfficialPhoto(photoFile)
+
+      const { data: newResident, error: residentError } = await supabase
+        .from('residents')
         .insert({
-          resident_id: residentId,
-          position,
-          term_start: termStart,
-          term_end: termEnd,
-          is_active: isActive !== undefined ? (isActive ? 1 : 0) : 1
+          first_name: firstName,
+          last_name: lastName,
+          birthdate: termStart || '1970-01-01',
+          sex: 'Male',
+          civil_status: 'Single',
+          contact_no: contactNo || null,
+          purok: 'Purok 1',
+          address: 'Barangay Hall, Barangay Baesa, Quezon City',
+          profile_path: profilePath,
         })
         .select()
         .single()
 
+      if (residentError) throw residentError
+
+      const { data, error } = await supabase
+        .from('officials')
+        .insert({
+          resident_id: newResident.id,
+          position,
+          term_start: termStart,
+          term_end: termEnd,
+          is_active: 1,
+        })
+        .select('*, residents(*)')
+        .single()
+
       if (error) throw error
-      return { success: true, official: data }
+      await logActivity('create_official', `Registered official: ${firstName} ${lastName}`)
+      return { success: true, official: mapOfficialRecord(data) }
     } catch (error) {
       throw error || new Error('Failed to create official')
     }
   },
   updateOfficial: async (formData) => {
     try {
-      let id, residentId, position, termStart, termEnd, isActive;
+      let id, firstName, lastName, position, termStart, termEnd, contactNo, photoFile
+
       if (formData instanceof FormData) {
-        id = formData.get('id');
-        residentId = formData.get('resident_id');
-        position = formData.get('position');
-        termStart = formData.get('term_start');
-        termEnd = formData.get('term_end');
-        isActive = formData.get('is_active') === 'on' || formData.get('is_active') === '1' ? 1 : 0;
+        id = formData.get('id')
+        firstName = formData.get('first_name')
+        lastName = formData.get('last_name')
+        position = formData.get('position')
+        termStart = formData.get('term_start')
+        termEnd = formData.get('term_end')
+        contactNo = formData.get('contact_no')
+        photoFile = formData.get('photo')
       } else {
-        id = formData.id;
-        residentId = formData.resident_id;
-        position = formData.position;
-        termStart = formData.term_start;
-        termEnd = formData.term_end;
-        isActive = formData.is_active;
+        id = formData.id
+        firstName = formData.first_name
+        lastName = formData.last_name
+        position = formData.position
+        termStart = formData.term_start
+        termEnd = formData.term_end
+        contactNo = formData.contact_no
+        photoFile = formData.photo
       }
+
+      const { data: current, error: getError } = await supabase
+        .from('officials')
+        .select('resident_id, residents(profile_path)')
+        .eq('id', id)
+        .single()
+
+      if (getError) throw getError
+
+      let profilePath = current.residents?.profile_path || null
+      if (photoFile && photoFile instanceof File && photoFile.size > 0) {
+        profilePath = await uploadOfficialPhoto(photoFile)
+      }
+
+      const { error: residentError } = await supabase
+        .from('residents')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          contact_no: contactNo || null,
+          profile_path: profilePath,
+        })
+        .eq('id', current.resident_id)
+
+      if (residentError) throw residentError
 
       const { data, error } = await supabase
         .from('officials')
         .update({
-          resident_id: residentId,
           position,
           term_start: termStart,
           term_end: termEnd,
-          is_active: isActive !== undefined ? (isActive ? 1 : 0) : 1
         })
         .eq('id', id)
-        .select()
+        .select('*, residents(*)')
         .single()
 
       if (error) throw error
-      return { success: true, official: data }
+      return { success: true, official: mapOfficialRecord(data) }
     } catch (error) {
       throw error || new Error('Failed to update official')
     }
@@ -825,7 +929,7 @@ export const useAdminStore = create((set, get) => ({
         .maybeSingle()
 
       if (error) throw error
-      return data
+      return data ? { ...data, body: data.content } : null
     } catch (error) {
       console.error('Failed to fetch announcement detail', error)
       return null
@@ -835,20 +939,22 @@ export const useAdminStore = create((set, get) => ({
   },
   createAnnouncement: async (data) => {
     try {
+      const authorId = useAuthStore.getState().user?.id || null
       const { data: newAnn, error } = await supabase
         .from('announcements')
         .insert({
           title: data.title,
-          content: data.content,
+          content: data.body || data.content,
           category: data.category || 'General',
-          status: data.status || 'published',
-          image_path: data.image_path || null
+          is_published: data.is_published ?? 1,
+          author_id: authorId,
         })
         .select()
         .single()
 
       if (error) throw error
-      return { success: true, announcement: newAnn }
+      await logActivity('create_announcement', `Created announcement: ${data.title}`)
+      return { success: true, announcement: { ...newAnn, body: newAnn.content } }
     } catch (error) {
       throw error || new Error('Failed to create announcement')
     }
@@ -859,17 +965,17 @@ export const useAdminStore = create((set, get) => ({
         .from('announcements')
         .update({
           title: data.title,
-          content: data.content,
+          content: data.body || data.content,
           category: data.category,
-          status: data.status,
-          image_path: data.image_path
+          is_published: data.is_published ?? 0,
         })
         .eq('id', data.id)
         .select()
         .single()
 
       if (error) throw error
-      return { success: true, announcement: updated }
+      await logActivity('update_announcement', `Updated announcement #${data.id}`)
+      return { success: true, announcement: { ...updated, body: updated.content } }
     } catch (error) {
       throw error || new Error('Failed to update announcement')
     }
@@ -1116,22 +1222,38 @@ export const useAdminStore = create((set, get) => ({
   fetchUsers: async (params = {}) => {
     set({ usersLoading: true })
     try {
-      const queryParams = new URLSearchParams()
-      if (params.page) queryParams.append('page', params.page)
-      if (params.limit) queryParams.append('limit', params.limit)
-      if (params.search) queryParams.append('search', params.search)
-      if (params.role) queryParams.append('role', params.role)
-      if (params.status) queryParams.append('status', params.status)
+      const page = params.page || 1
+      const limit = params.limit || 10
+      const from = (page - 1) * limit
+      const to = from + limit - 1
 
-      const res = await api.get(`/users/list.php?${queryParams.toString()}`)
-      if (res.data.success) {
-        set({
-          users: res.data.users,
-          usersTotal: res.data.totalItems,
-          usersPages: res.data.totalPages,
-          usersCurrentPage: res.data.currentPage,
-        })
+      let query = supabase
+        .from('users')
+        .select('*', { count: 'exact' })
+
+      if (params.role) {
+        query = query.eq('role', params.role)
       }
+      if (params.status) {
+        query = query.eq('status', params.status)
+      }
+      if (params.search) {
+        query = query.or(
+          `first_name.ilike.%${params.search}%,last_name.ilike.%${params.search}%,email.ilike.%${params.search}%`
+        )
+      }
+
+      query = query.order('created_at', { ascending: false }).range(from, to)
+
+      const { data, count, error } = await query
+      if (error) throw error
+
+      set({
+        users: data || [],
+        usersTotal: count || 0,
+        usersPages: Math.ceil((count || 0) / limit),
+        usersCurrentPage: page,
+      })
     } catch (error) {
       console.error('Failed to fetch users', error)
     } finally {
@@ -1140,27 +1262,51 @@ export const useAdminStore = create((set, get) => ({
   },
   approveUser: async (id) => {
     try {
-      const res = await api.patch('/users/approve.php', { id })
-      return res.data
+      const { data, error } = await supabase
+        .from('users')
+        .update({ status: 'active' })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      await logActivity('approve_user', `Approved user account #${id}`)
+      return { success: true, user: data }
     } catch (error) {
-      throw error.response?.data || new Error('Failed to approve user')
+      throw error || new Error('Failed to approve user')
     }
   },
   changeUserRole: async (id, role) => {
     try {
-      const res = await api.patch('/users/change-role.php', { id, role })
-      return res.data
+      const { data, error } = await supabase
+        .from('users')
+        .update({ role })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      await logActivity('change_user_role', `Changed user #${id} role to ${role}`)
+      return { success: true, user: data }
     } catch (error) {
-      throw error.response?.data || new Error('Failed to change user role')
+      throw error || new Error('Failed to change user role')
     }
   },
   toggleUserActive: async (id, currentStatus) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-      const res = await api.patch('/users/toggle-active.php', { id, status: newStatus })
-      return res.data
+      const { data, error } = await supabase
+        .from('users')
+        .update({ status: newStatus })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      await logActivity('toggle_user_status', `Set user #${id} status to ${newStatus}`)
+      return { success: true, user: data }
     } catch (error) {
-      throw error.response?.data || new Error('Failed to toggle user status')
+      throw error || new Error('Failed to toggle user status')
     }
   },
 
@@ -1198,7 +1344,12 @@ export const useAdminStore = create((set, get) => ({
       if (error) throw error
 
       set({
-        activityLogs: data || [],
+        activityLogs: (data || []).map((log) => ({
+          ...log,
+          first_name: log.users?.first_name || '',
+          last_name: log.users?.last_name || '',
+          email: log.users?.email || '',
+        })),
         activityLogsTotal: count || 0,
         activityLogsPages: Math.ceil((count || 0) / limit),
         activityLogsCurrentPage: page,
@@ -1269,7 +1420,7 @@ export const useAdminStore = create((set, get) => ({
       const { data, error } = await query
       if (error) throw error
 
-      set({ clinicSchedules: data || [] })
+      set({ clinicSchedules: (data || []).map(mapClinicSchedule) })
     } catch (error) {
       console.error('Failed to fetch clinic schedules', error)
     } finally {
@@ -1321,7 +1472,7 @@ export const useAdminStore = create((set, get) => ({
       const { data, error } = await query
       if (error) throw error
 
-      set({ clinicAppointments: data || [] })
+      set({ clinicAppointments: (data || []).map(mapAppointment) })
     } catch (error) {
       console.error('Failed to fetch clinic appointments', error)
     } finally {
@@ -1339,6 +1490,7 @@ export const useAdminStore = create((set, get) => ({
         .single()
 
       if (error) throw error
+      await logActivity('update_appointment_status', `Updated appointment #${id} to ${status}`)
       return { success: true, appointment: data }
     } catch (error) {
       throw error || new Error('Failed to update appointment')
@@ -1349,7 +1501,11 @@ export const useAdminStore = create((set, get) => ({
   generateDigitalId: async (residentId) => {
     try {
       const idNo = `BRGY-${residentId}-${Math.floor(1000 + Math.random() * 9000)}`
-      const secureHash = btoa(`id=${idNo}&resident=${residentId}&timestamp=${Date.now()}`)
+      const payload = `id=${idNo}&resident=${residentId}&timestamp=${Date.now()}`
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload))
+      const secureHash = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
       const issuedAt = new Date().toISOString().split('T')[0]
       const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
@@ -1367,19 +1523,39 @@ export const useAdminStore = create((set, get) => ({
         .single()
 
       if (error) throw error
-
+      await logActivity('generate_digital_id', `Issued Digital ID for resident #${residentId}`)
       return { success: true, id_details: data }
     } catch (error) {
-      throw error || new Error('Failed to generate Digital ID')
+      throw new Error(error?.message || 'Failed to generate Digital ID')
     }
   },
 
   scanVerifyDigitalId: async (hash) => {
     try {
-      const res = await api.get(`/digital-id/scan-verify.php?hash=${hash}`)
-      return res.data
+      const { data: resident, error } = await supabase
+        .from('residents')
+        .select('id, first_name, last_name, middle_name, birthdate, sex, purok, address, profile_path, barangay_id_no, digital_id_issued_at, digital_id_expires_at, digital_id_secure_hash, digital_id_status, is_archived')
+        .eq('digital_id_secure_hash', hash)
+        .maybeSingle()
+
+      if (error) throw error
+
+      if (!resident || resident.digital_id_status !== 'issued') {
+        return { success: false, message: 'Digital ID not found or not issued.' }
+      }
+
+      if (resident.is_archived) {
+        return { success: false, message: 'This resident account is archived. ID is no longer valid.' }
+      }
+
+      const today = new Date().toISOString().split('T')[0]
+      if (resident.digital_id_expires_at && resident.digital_id_expires_at < today) {
+        return { success: false, message: 'This Digital ID has expired.' }
+      }
+
+      return { success: true, verified: true, message: 'Digital ID verified successfully.', resident }
     } catch (error) {
-      throw error.response?.data || new Error('Failed to verify Digital ID hash')
+      throw new Error(error?.message || 'Failed to verify Digital ID hash')
     }
   }
 }))

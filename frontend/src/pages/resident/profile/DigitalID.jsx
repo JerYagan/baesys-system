@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react'
 import { useResidentStore } from '../../../store/useResidentStore'
 import Spinner from '../../../components/ui/Spinner'
 import { useNotifStore } from '../../../store/useNotifStore'
-import { useAuthStore } from '../../../store/useAuthStore'
+import { exportDigitalIdPdf } from '../../../utils/digitalIdPdfExport'
 
 export default function DigitalID() {
   const { digitalId, digitalIdStatus, digitalIdLoading, fetchDigitalId, requestDigitalId } = useResidentStore()
   const { success: showSuccess, error: showError } = useNotifStore()
   const [requestLoading, setRequestLoading] = useState(false)
+  const [downloadLoading, setDownloadLoading] = useState(false)
 
   useEffect(() => {
     fetchDigitalId()
@@ -24,6 +25,20 @@ export default function DigitalID() {
       showError(err.message || 'Failed to submit request')
     } finally {
       setRequestLoading(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!digitalId) return
+
+    setDownloadLoading(true)
+    try {
+      await exportDigitalIdPdf(digitalId)
+    } catch (err) {
+      console.error('Failed to generate Digital ID PDF', err)
+      showError('Failed to generate PDF. Please try again.')
+    } finally {
+      setDownloadLoading(false)
     }
   }
 
@@ -95,7 +110,7 @@ export default function DigitalID() {
       ) : (
         <div className="flex flex-col items-center space-y-8 w-full max-w-5xl">
           {/* Back to Back Cards Layout */}
-          <div className="flex flex-col lg:flex-row gap-6 justify-center items-center w-full">
+          <div id="digital-id-printable" className="flex flex-col lg:flex-row gap-6 justify-center items-center w-full bg-white p-4 rounded-xl">
             
             {/* FRONT SIDE */}
             <div className="relative w-80 h-[480px] rounded-2xl bg-white border-2 border-accent-600 shadow-xl p-5 flex flex-col justify-between dark:bg-slate-900 dark:border-accent-500">
@@ -117,6 +132,7 @@ export default function DigitalID() {
                       src={digitalId.profile_path.startsWith('/uploads') ? `/backend${digitalId.profile_path}` : digitalId.profile_path}
                       alt="Resident profile photo"
                       className="w-full h-full object-cover"
+                      crossOrigin="anonymous"
                     />
                   ) : (
                     <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +144,7 @@ export default function DigitalID() {
                 <div className="text-center">
                   <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Resident Name</span>
                   <h2 className="text-lg font-black text-slate-950 dark:text-white uppercase mt-0.5">
-                    {digitalId.last_name}, {digitalId.first_name} {digitalId.middle_name}
+                    {[digitalId.last_name, digitalId.first_name, digitalId.middle_name].filter(Boolean).join(' ')}
                   </h2>
                 </div>
               </div>
@@ -200,7 +216,7 @@ export default function DigitalID() {
                 </div>
                 <div className="flex justify-between items-center text-[9px]">
                   <span className="text-slate-400 block uppercase">Emergency Contact</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">7-3393-122</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{digitalId.contact_no || '—'}</span>
                 </div>
                 <div className="flex flex-col text-[7px] text-slate-400 leading-none pt-1">
                   <span className="uppercase">Secure Signature Hash</span>
@@ -217,15 +233,15 @@ export default function DigitalID() {
           </div>
 
           {/* Action buttons */}
-          <div className="w-full max-w-sm flex gap-3">
-            <a
-              href={`/backend/api/digital-id/download-card.php?token=${useAuthStore.getState().token}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-1 btn btn-primary py-2.5 font-semibold text-xs text-center"
+          <div className="w-full max-w-sm flex gap-3 print:hidden">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloadLoading}
+              className="flex-1 btn btn-primary py-2.5 font-semibold text-xs text-center disabled:opacity-60"
             >
-              📥 Download Printable PDF
-            </a>
+              {downloadLoading ? 'Generating PDF...' : '📥 Download Printable PDF'}
+            </button>
           </div>
         </div>
       )}

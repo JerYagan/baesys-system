@@ -1,6 +1,7 @@
 // src/api/auth.js
 // Auth API helper functions using Supabase
 import { supabase } from './supabaseClient'
+import { logActivity } from '../utils/activityLogger'
 
 /**
  * Login with email and password using Supabase Auth
@@ -25,6 +26,10 @@ export const login = async (email, password) => {
 
   if (dbUserError) {
     console.error('Failed to fetch user from DB:', dbUserError)
+  }
+
+  if (dbUser?.id) {
+    await logActivity('login', `User ${email} logged in`, dbUser.id)
   }
 
   return {
@@ -102,6 +107,8 @@ export const register = async (data) => {
     throw residentInsertError
   }
 
+  await logActivity('register', `New resident account registered: ${data.email}`, newUser.id)
+
   return {
     success: true,
     message: 'Registration successful! You can now log in.'
@@ -113,8 +120,16 @@ export const register = async (data) => {
  * @returns {{ success, message }}
  */
 export const logout = async () => {
+  const user = (await supabase.auth.getUser()).data.user
   const { error } = await supabase.auth.signOut()
   if (error) throw error
+
+  if (user?.email) {
+    const { data: dbUser } = await supabase.from('users').select('id').eq('email', user.email).maybeSingle()
+    if (dbUser?.id) {
+      await logActivity('logout', `User ${user.email} logged out`, dbUser.id)
+    }
+  }
 
   return {
     success: true,

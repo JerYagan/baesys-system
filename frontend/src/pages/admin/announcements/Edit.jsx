@@ -23,7 +23,7 @@ export default function EditAnnouncement() {
       const ann = await fetchAnnouncementById(id)
       if (ann) {
         setTitle(ann.title || '')
-        setBody(ann.body || '')
+        setBody(ann.body || ann.content || '')
         setCategory(ann.category || '')
         setIsPublished(ann.is_published == 1)
       }

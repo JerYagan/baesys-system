@@ -35,7 +35,7 @@ export default function AnnouncementsList() {
 
         const { data, error } = await query
         if (error) throw error
-        setAnnouncements(data || [])
+        setAnnouncements((data || []).map((ann) => ({ ...ann, body: ann.content })))
       } catch (err) {
         console.error('Failed to fetch announcements', err)
       } finally {

@@ -6,7 +6,6 @@ import { useUIStore } from '../../../store/useUIStore'
 import Pagination from '../../../components/ui/Pagination'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Spinner from '../../../components/ui/Spinner'
-import api from '../../../api/axios'
 
 export default function DocumentRequestsList() {
   const { setPageTitle } = useUIStore()
@@ -18,7 +17,10 @@ export default function DocumentRequestsList() {
     requestsCurrentPage,
     requestsStats,
     requestsLoading,
-    fetchRequests
+    fetchRequests,
+    docTypes,
+    docTypesLoading,
+    fetchAdminDocTypes,
   } = useAdminStore()
 
   // Filters state
@@ -27,24 +29,10 @@ export default function DocumentRequestsList() {
   const [type, setType] = useState('0')
   const [page, setPage] = useState(1)
 
-  // Document types dropdown state
-  const [docTypes, setDocTypes] = useState([])
-  const [typesLoading, setTypesLoading] = useState(false)
-
   useEffect(() => {
     setPageTitle('Document Requests')
-    
-    // Load document types
-    setTypesLoading(true)
-    api.get('/document-types/list.php')
-      .then((res) => {
-        if (res.data.success) {
-          setDocTypes(res.data.document_types)
-        }
-      })
-      .catch((err) => console.error('Failed to load document types', err))
-      .finally(() => setTypesLoading(false))
-  }, [setPageTitle])
+    fetchAdminDocTypes()
+  }, [setPageTitle, fetchAdminDocTypes])
 
   // Fetch requests when filters or page changes
   useEffect(() => {
@@ -142,7 +130,7 @@ export default function DocumentRequestsList() {
               value={type}
               onChange={handleTypeChange}
               className="input text-sm"
-              disabled={typesLoading}
+              disabled={docTypesLoading}
             >
               <option value="0">All Document Types</option>
               {docTypes.map((t) => (

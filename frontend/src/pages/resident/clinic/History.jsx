@@ -5,6 +5,7 @@ import { useNotifStore } from '../../../store/useNotifStore'
 import Spinner from '../../../components/ui/Spinner'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import { supabase } from '../../../api/supabaseClient'
+import { logActivity } from '../../../utils/activityLogger'
 
 export default function MyAppointments() {
   const { myAppointments, myAppointmentsLoading, fetchMyAppointments } = useResidentStore()
@@ -27,6 +28,7 @@ export default function MyAppointments() {
 
       if (error) throw error
 
+      await logActivity('cancel_appointment', `Cancelled clinic appointment #${id}`)
       showSuccess('Appointment cancelled successfully.')
       fetchMyAppointments()
     } catch (err) {
@@ -37,7 +39,11 @@ export default function MyAppointments() {
   }
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    if (!dateStr) return '—'
+    const normalized = String(dateStr).includes('T') ? dateStr : `${dateStr}T00:00:00`
+    const date = new Date(normalized)
+    if (Number.isNaN(date.getTime())) return '—'
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
